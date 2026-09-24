@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HPACK 状态镜 · HTTP/2 帧、动态表与流生命周期回放器</title>
+    <style>
+      :root { color-scheme: light; }
+      body { font-family: "SF Mono", Menlo, Consolas, monospace; margin: 0; background: #f6f7f9; color: #1c2330; font-size: 13px; }
+      header { background: #16202e; color: #e8eef7; padding: 10px 16px; }
+      header h1 { font-size: 15px; margin: 0 0 6px; }
+      header .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+      button { font: inherit; padding: 3px 10px; border: 1px solid #39445a; background: #223047; color: #e8eef7; border-radius: 4px; cursor: pointer; }
+      button:hover { background: #2d3f5c; }
+      main button { border-color: #b9c2d0; background: #fff; color: #1c2330; }
+      main button:hover { background: #eef1f6; }
+      main { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+      section { background: #fff; border: 1px solid #d8dee8; border-radius: 6px; padding: 10px 12px; }
+      section h2 { font-size: 13px; margin: 0 0 8px; color: #33415c; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #e2e7ef; padding: 3px 6px; text-align: left; vertical-align: top; }
+      th { background: #f0f3f8; font-weight: 600; }
+      .vio { color: #b3261e; font-weight: 600; }
+      .ok { color: #1a7f37; }
+      .warn { color: #9a6700; }
+      .tag { display: inline-block; padding: 0 5px; border-radius: 3px; background: #e8eef7; margin-right: 4px; }
+      .tag.conn { background: #fdd; }
+      .tag.stream { background: #ffe9c4; }
+      .mono { font-family: inherit; white-space: pre-wrap; word-break: break-all; }
+      #conflict-panel { border: 2px solid #b3261e; }
+      .hidden { display: none; }
+      .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      select, input, textarea { font: inherit; }
+      .evt { border-bottom: 1px dashed #dfe4ec; padding: 2px 0; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>HPACK 状态镜 · HTTP/2 帧、动态表与流生命周期回放器</h1>
+      <div class="bar" id="toolbar"></div>
+    </header>
+    <main id="app"></main>
+    <script type="module" src="/src/web/main.ts"></script>
+  </body>
+</html>

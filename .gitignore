@@ -34,3 +34,6 @@ coverage/
 .vite/
 .turbo/
 *.tsbuildinfo
+
+# --- 本地 SQLite 数据库与运行数据（导入/删除本地库流程使用）---
+data/
