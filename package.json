@@ -1,0 +1,22 @@
+{
+  "name": "hpack-state-mirror",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "HPACK 状态镜：HTTP/2 帧、动态表与流生命周期回放器",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest",
+    "craft:case": "tsx scripts/craft-case.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.0",
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0",
+    "vite": "^6.3.0",
+    "vitest": "^3.2.0"
+  }
+}
