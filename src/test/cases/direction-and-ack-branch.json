@@ -1,0 +1,72 @@
+{
+  "caseId": "direction-and-ack-branch",
+  "title": "分支2：方向隔离 + SETTINGS ACK 前后上限多候选 + 连接/stream 错误分离",
+  "mutates": null,
+  "expects": [
+    {
+      "ruleId": "R-HPACK-DIRECTION",
+      "scope": "connection",
+      "note": "stream3 的索引 62 必须命中 c2s 动态表 client-only；若跨方向读到 server-only 即方向表混淆"
+    },
+    {
+      "ruleId": "R-HPACK-SIZE-LIMIT",
+      "scope": "connection",
+      "note": "ACK 前 size update 256 产出两个候选（严格=COMPRESSION_ERROR / 宽松=延迟到 ACK 采纳），无法唯一决定时全部保留"
+    }
+  ],
+  "coordinateSystem": {
+    "frameOffset": "octet per direction",
+    "streamId": "uint31",
+    "range": "half-open [start,end)"
+  },
+  "frames": [
+    {
+      "id": "f0_c2s",
+      "bytesHex": "000006040000000000000100000100",
+      "direction": "c2s",
+      "offsetOctets": 0,
+      "seq": 0,
+      "note": "client SETTINGS：c2s HEADER_TABLE_SIZE=256 octet（尚未 ACK）"
+    },
+    {
+      "id": "f0_s2c",
+      "bytesHex": "000000040000000000",
+      "direction": "s2c",
+      "offsetOctets": 0,
+      "seq": 1,
+      "note": "server SETTINGS：空（s2c 保持 4096 octet）"
+    },
+    {
+      "id": "f15_c2s",
+      "bytesHex": "0000120104000000013f2182bd81540b636c69656e742d6f6e6c79",
+      "direction": "c2s",
+      "offsetOctets": 15,
+      "seq": 2,
+      "note": "HEADERS stream 1：c2s block 以 size update 256 开头（ACK 前 → 双候选）+ 字面 client-only"
+    },
+    {
+      "id": "f9_s2c",
+      "bytesHex": "000000040100000000",
+      "direction": "s2c",
+      "offsetOctets": 9,
+      "seq": 3,
+      "note": "此时 server 才 ACK（ACK 生效点晚于该 block），上限不回溯适用"
+    },
+    {
+      "id": "f18_s2c",
+      "bytesHex": "00000e01040000000184580b7365727665722d6f6e6c79",
+      "direction": "s2c",
+      "offsetOctets": 18,
+      "seq": 4,
+      "note": "server HEADERS stream 1：s2c 独立动态表插入 server-only"
+    },
+    {
+      "id": "f42_c2s",
+      "bytesHex": "000001010400000003be",
+      "direction": "c2s",
+      "offsetOctets": 42,
+      "seq": 5,
+      "note": "client HEADERS stream 3：引用动态表索引 62（应为 c2s 的 client-only，绝非 s2c 条目）"
+    }
+  ]
+}

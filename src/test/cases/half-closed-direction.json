@@ -1,0 +1,116 @@
+{
+  "caseId": "half-closed-direction",
+  "title": "半关闭帧与方向表混淆：half-closed(local) 后 client 再发 HEADERS；并把 s2c 动态索引当 c2s 用",
+  "mutates": {
+    "frameOffsetOctets": 43,
+    "direction": "s2c",
+    "replacementNote": "在 stream 关闭后追加 c2s HEADERS（复用已关闭 stream 1）"
+  },
+  "expects": [
+    {
+      "ruleId": "R-STREAM-REUSE",
+      "scope": "stream",
+      "note": "closed 后再发 HEADERS = STREAM_CLOSED，stream 错误不升级为连接错误"
+    },
+    {
+      "ruleId": "R-HPACK-DIRECTION",
+      "scope": "connection",
+      "note": "附加材料：c2s 引用仅存在于 s2c 动态表的索引（在独立 capture branch2 中体现）"
+    }
+  ],
+  "coordinateSystem": {
+    "frameOffset": "octet per direction",
+    "streamId": "uint31",
+    "range": "half-open [start,end)"
+  },
+  "frames": [
+    {
+      "id": "f0_c2s",
+      "bytesHex": "000006040000000000000100000100",
+      "direction": "c2s",
+      "offsetOctets": 0,
+      "seq": 0,
+      "note": "client SETTINGS：提议 c2s 方向 HEADER_TABLE_SIZE=256 octets（生效点待 ACK）"
+    },
+    {
+      "id": "f0_s2c",
+      "bytesHex": "000000040000000000",
+      "direction": "s2c",
+      "offsetOctets": 0,
+      "seq": 1,
+      "note": "server SETTINGS：s2c 方向保持默认（空 SETTINGS）"
+    },
+    {
+      "id": "f9_s2c",
+      "bytesHex": "000000040100000000",
+      "direction": "s2c",
+      "offsetOctets": 9,
+      "seq": 2,
+      "note": "server ACK client SETTINGS → c2s 256 octet 上限生效"
+    },
+    {
+      "id": "f15_c2s",
+      "bytesHex": "000000040100000000",
+      "direction": "c2s",
+      "offsetOctets": 15,
+      "seq": 3,
+      "note": "client ACK server SETTINGS"
+    },
+    {
+      "id": "f24_c2s",
+      "bytesHex": "00000c01000000000182bd8154076162632d313233",
+      "direction": "c2s",
+      "offsetOctets": 24,
+      "seq": 4,
+      "note": "HEADERS stream 1 起始：:method GET(idx2) :scheme https(idx61) :path /(idx1) + 字面 x-trace 入动态表，无 END_HEADERS"
+    },
+    {
+      "id": "f45_c2s",
+      "bytesHex": "00000109040000000181",
+      "direction": "c2s",
+      "offsetOctets": 45,
+      "seq": 5,
+      "note": "CONTINUATION stream 1 收尾：:authority 索引 idx1 + END_HEADERS"
+    },
+    {
+      "id": "f55_c2s",
+      "bytesHex": "000000000100000001",
+      "direction": "c2s",
+      "offsetOctets": 55,
+      "seq": 6,
+      "note": "DATA stream 1 空体 + END_STREAM → half-closed(local)"
+    },
+    {
+      "id": "f18_s2c",
+      "bytesHex": "00000101040000000184",
+      "direction": "s2c",
+      "offsetOctets": 18,
+      "seq": 7,
+      "note": "server HEADERS stream 1 响应（:status 200 idx4），s2c 独立动态表"
+    },
+    {
+      "id": "f28_s2c",
+      "bytesHex": "0000020001000000016f6b",
+      "direction": "s2c",
+      "offsetOctets": 28,
+      "seq": 8,
+      "note": "server DATA + END_STREAM → stream closed"
+    },
+    {
+      "id": "f64_c2s",
+      "bytesHex": "00000101040000000182",
+      "direction": "c2s",
+      "offsetOctets": 64,
+      "seq": 9,
+      "note": "stream 1 已 closed 后 client 又发 HEADERS（半关闭/方向混淆 + id 复用）"
+    },
+    {
+      "id": "f74_c2s",
+      "bytesHex": "00000100010000000101",
+      "direction": "c2s",
+      "offsetOctets": 74,
+      "seq": 10,
+      "note": "closed stream 上的 DATA 同样按 stream 错误裁决"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "hpack-state-mirror",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "HPACK 状态镜：HTTP/2 帧、动态表与流生命周期回放器",
+  "scripts": {
+    "dev": "node --experimental-strip-types server/dev.ts",
+    "build": "vite build",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.2",
+    "typescript": "^7.0.2",
+    "vite": "^6.4.3",
+    "vitest": "^3.2.7"
+  }
+}

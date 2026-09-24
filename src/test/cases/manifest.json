@@ -1,0 +1,193 @@
+{
+  "packId": "hpack-state-mirror-offline-pack",
+  "title": "HPACK 状态镜离线案例包：HTTP/2 帧、动态表与流生命周期",
+  "domain": "HTTP/2 (RFC 7540) + HPACK (RFC 7541)",
+  "units": {
+    "frameOffset": "octet（按方向字节流）",
+    "tableSize": "octet",
+    "streamId": "31-bit unsigned integer（R 位必须 0）",
+    "byteRange": "[startOctet,endOctet) half-open"
+  },
+  "initialVersion": "v1.0.0",
+  "revisions": [
+    {
+      "revisionId": "rev-params-v2",
+      "kind": "parameter-revision",
+      "fromRulePack": 1,
+      "toRulePack": 2,
+      "note": "参数修订：R-HPACK-SIZE-LIMIT 升级到 v2，要求 ACK 前后候选全部显式保留。失效范围仅限引用该规则的 findings（hpack/settings 标签），帧时间线与 stream 状态不失效。",
+      "affectsTags": [
+        "hpack",
+        "settings"
+      ]
+    },
+    {
+      "revisionId": "rev-local-source",
+      "kind": "local-source-change",
+      "note": "只影响局部依赖的源数据改动：替换 baseline 中偏移 27 的 c2s HEADERS 原帧字节（索引越界变体）。失效范围=该 RawFrame 的下游派生（header-block/headers/table-version/findings），其它帧结论保持。",
+      "replacesFrame": {
+        "frameId": "f27_c2s",
+        "caseId": "hpack-index-oob"
+      }
+    },
+    {
+      "revisionId": "rev-conflicting-decisions",
+      "kind": "conflicting-human-decisions",
+      "note": "互相冲突的人工决定：对 ACK 前 size update 256，审阅者 A 采纳“严格 COMPRESSION_ERROR 连接错误”，审阅者 B 采纳“宽松延迟采纳”。两个分支都保留被采纳与未采纳结果，冲突在合并保存时暴露双方差异。",
+      "candidates": [
+        {
+          "candidateId": "limit-256-strict",
+          "decision": "reject-block",
+          "adoptedBy": "reviewer-A"
+        },
+        {
+          "candidateId": "limit-256-lax",
+          "decision": "adopt-after-ack",
+          "adoptedBy": "reviewer-B"
+        }
+      ]
+    }
+  ],
+  "acceptancePath": [
+    "frame-timeline",
+    "stream-state-machine",
+    "dynamic-table-evolution",
+    "header-origin",
+    "earliest-protocol-violation"
+  ],
+  "generatedAt": "2026-09-24T00:00:00+09:00",
+  "cases": [
+    {
+      "caseId": "baseline",
+      "title": "基线：合规 SETTINGS 交换 + CONTINUATION 链 + 双向独立动态表",
+      "file": "baseline.json",
+      "expects": [],
+      "mutates": null
+    },
+    {
+      "caseId": "hpack-index-oob",
+      "title": "表索引越界：HEADERS 引用不存在的动态表索引 100",
+      "file": "hpack-index-oob.json",
+      "expects": [
+        {
+          "ruleId": "R-HPACK-INDEX",
+          "scope": "connection",
+          "note": "COMPRESSION_ERROR 连接错误，证据指向 block 内 offset 0"
+        }
+      ],
+      "mutates": {
+        "frameOffsetOctets": 27,
+        "direction": "c2s",
+        "replacementNote": "把 HEADERS block 改为单字节索引 0xe4=100（静态61+动态39，动态表为空）"
+      }
+    },
+    {
+      "caseId": "concurrent-header-block",
+      "title": "并发 header block：HEADERS 未 END_HEADERS 时插入 DATA",
+      "file": "concurrent-header-block.json",
+      "expects": [
+        {
+          "ruleId": "R-HEADERBLOCK-CONTIGUITY",
+          "scope": "connection",
+          "note": "连接错误，输入片段为插入的 DATA 帧"
+        }
+      ],
+      "mutates": {
+        "frameOffsetOctets": 42,
+        "direction": "c2s",
+        "replacementNote": "用 DATA stream1 替换原 CONTINUATION，打断 header block"
+      }
+    },
+    {
+      "caseId": "settings-ack-timing",
+      "title": "SETTINGS ACK 时机：未发送 SETTINGS 先收到 ACK",
+      "file": "settings-ack-timing.json",
+      "expects": [
+        {
+          "ruleId": "R-SETTINGS-ACK",
+          "scope": "connection",
+          "note": "unsolicited ACK 连接错误，且 c2s 256 上限未在该点生效"
+        }
+      ],
+      "mutates": {
+        "frameOffsetOctets": 9,
+        "direction": "s2c",
+        "replacementNote": "删除 s2c 非ACK SETTINGS，仅保留孤立 ACK"
+      }
+    },
+    {
+      "caseId": "padding-overflow",
+      "title": "padding 越界：HEADERS 声明 pad length 200 octets，载荷仅数 octet",
+      "file": "padding-overflow.json",
+      "expects": [
+        {
+          "ruleId": "R-PADDING",
+          "scope": "connection",
+          "note": "连接错误，原字节保留，pad-length 字段坐标 [0,1)"
+        }
+      ],
+      "mutates": {
+        "frameOffsetOctets": 27,
+        "direction": "c2s",
+        "replacementNote": "HEADERS 加 PADDED，pad length=200 超过载荷"
+      }
+    },
+    {
+      "caseId": "stream-id-exhaust",
+      "title": "stream id 穷尽与保留位：HEADERS 使用 0x7fffffff 后，再来 R 位置位帧",
+      "file": "stream-id-exhaust.json",
+      "expects": [
+        {
+          "ruleId": "R-STREAM-EXHAUST",
+          "scope": "connection",
+          "note": "最大 id 的新 HEADERS 触发 ENHANCE_YOUR_CALM 连接错误"
+        }
+      ],
+      "mutates": {
+        "frameOffsetOctets": 27,
+        "direction": "c2s",
+        "replacementNote": "HEADERS stream=2147483647（31-bit 最大），随后 R 位帧"
+      }
+    },
+    {
+      "caseId": "half-closed-direction",
+      "title": "半关闭帧与方向表混淆：half-closed(local) 后 client 再发 HEADERS；并把 s2c 动态索引当 c2s 用",
+      "file": "half-closed-direction.json",
+      "expects": [
+        {
+          "ruleId": "R-STREAM-REUSE",
+          "scope": "stream",
+          "note": "closed 后再发 HEADERS = STREAM_CLOSED，stream 错误不升级为连接错误"
+        },
+        {
+          "ruleId": "R-HPACK-DIRECTION",
+          "scope": "connection",
+          "note": "附加材料：c2s 引用仅存在于 s2c 动态表的索引（在独立 capture branch2 中体现）"
+        }
+      ],
+      "mutates": {
+        "frameOffsetOctets": 43,
+        "direction": "s2c",
+        "replacementNote": "在 stream 关闭后追加 c2s HEADERS（复用已关闭 stream 1）"
+      }
+    },
+    {
+      "caseId": "direction-and-ack-branch",
+      "title": "分支2：方向隔离 + SETTINGS ACK 前后上限多候选 + 连接/stream 错误分离",
+      "file": "direction-and-ack-branch.json",
+      "expects": [
+        {
+          "ruleId": "R-HPACK-DIRECTION",
+          "scope": "connection",
+          "note": "stream3 的索引 62 必须命中 c2s 动态表 client-only；若跨方向读到 server-only 即方向表混淆"
+        },
+        {
+          "ruleId": "R-HPACK-SIZE-LIMIT",
+          "scope": "connection",
+          "note": "ACK 前 size update 256 产出两个候选（严格=COMPRESSION_ERROR / 宽松=延迟到 ACK 采纳），无法唯一决定时全部保留"
+        }
+      ],
+      "mutates": null
+    }
+  ]
+}

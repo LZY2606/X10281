@@ -1,0 +1,87 @@
+{
+  "caseId": "settings-ack-timing",
+  "title": "SETTINGS ACK 时机：未发送 SETTINGS 先收到 ACK",
+  "mutates": {
+    "frameOffsetOctets": 9,
+    "direction": "s2c",
+    "replacementNote": "删除 s2c 非ACK SETTINGS，仅保留孤立 ACK"
+  },
+  "expects": [
+    {
+      "ruleId": "R-SETTINGS-ACK",
+      "scope": "connection",
+      "note": "unsolicited ACK 连接错误，且 c2s 256 上限未在该点生效"
+    }
+  ],
+  "coordinateSystem": {
+    "frameOffset": "octet per direction",
+    "streamId": "uint31",
+    "range": "half-open [start,end)"
+  },
+  "frames": [
+    {
+      "id": "f0_c2s",
+      "bytesHex": "000006040000000000000100000100",
+      "direction": "c2s",
+      "offsetOctets": 0,
+      "seq": 0,
+      "note": "client SETTINGS 256 octet"
+    },
+    {
+      "id": "f0_s2c",
+      "bytesHex": "000000040100000000",
+      "direction": "s2c",
+      "offsetOctets": 0,
+      "seq": 1,
+      "note": "孤立 ACK（s2c 未发过非 ACK SETTINGS）"
+    },
+    {
+      "id": "f15_c2s",
+      "bytesHex": "000000040100000000",
+      "direction": "c2s",
+      "offsetOctets": 15,
+      "seq": 2,
+      "note": "client ACK（无对应 SETTINGS，同样非法）"
+    },
+    {
+      "id": "f24_c2s",
+      "bytesHex": "00000c01000000000182bd8154076162632d313233",
+      "direction": "c2s",
+      "offsetOctets": 24,
+      "seq": 3,
+      "note": "HEADERS stream 1 起始：:method GET(idx2) :scheme https(idx61) :path /(idx1) + 字面 x-trace 入动态表，无 END_HEADERS"
+    },
+    {
+      "id": "f45_c2s",
+      "bytesHex": "00000109040000000181",
+      "direction": "c2s",
+      "offsetOctets": 45,
+      "seq": 4,
+      "note": "CONTINUATION stream 1 收尾：:authority 索引 idx1 + END_HEADERS"
+    },
+    {
+      "id": "f55_c2s",
+      "bytesHex": "000000000100000001",
+      "direction": "c2s",
+      "offsetOctets": 55,
+      "seq": 5,
+      "note": "DATA stream 1 空体 + END_STREAM → half-closed(local)"
+    },
+    {
+      "id": "f9_s2c",
+      "bytesHex": "00000101040000000184",
+      "direction": "s2c",
+      "offsetOctets": 9,
+      "seq": 6,
+      "note": "server HEADERS stream 1 响应（:status 200 idx4），s2c 独立动态表"
+    },
+    {
+      "id": "f19_s2c",
+      "bytesHex": "0000020001000000016f6b",
+      "direction": "s2c",
+      "offsetOctets": 19,
+      "seq": 7,
+      "note": "server DATA + END_STREAM → stream closed"
+    }
+  ]
+}

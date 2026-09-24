@@ -1,0 +1,95 @@
+{
+  "caseId": "concurrent-header-block",
+  "title": "并发 header block：HEADERS 未 END_HEADERS 时插入 DATA",
+  "mutates": {
+    "frameOffsetOctets": 42,
+    "direction": "c2s",
+    "replacementNote": "用 DATA stream1 替换原 CONTINUATION，打断 header block"
+  },
+  "expects": [
+    {
+      "ruleId": "R-HEADERBLOCK-CONTIGUITY",
+      "scope": "connection",
+      "note": "连接错误，输入片段为插入的 DATA 帧"
+    }
+  ],
+  "coordinateSystem": {
+    "frameOffset": "octet per direction",
+    "streamId": "uint31",
+    "range": "half-open [start,end)"
+  },
+  "frames": [
+    {
+      "id": "f0_c2s",
+      "bytesHex": "000006040000000000000100000100",
+      "direction": "c2s",
+      "offsetOctets": 0,
+      "seq": 0,
+      "note": "client SETTINGS：提议 c2s 方向 HEADER_TABLE_SIZE=256 octets（生效点待 ACK）"
+    },
+    {
+      "id": "f0_s2c",
+      "bytesHex": "000000040000000000",
+      "direction": "s2c",
+      "offsetOctets": 0,
+      "seq": 1,
+      "note": "server SETTINGS：s2c 方向保持默认（空 SETTINGS）"
+    },
+    {
+      "id": "f9_s2c",
+      "bytesHex": "000000040100000000",
+      "direction": "s2c",
+      "offsetOctets": 9,
+      "seq": 2,
+      "note": "server ACK client SETTINGS → c2s 256 octet 上限生效"
+    },
+    {
+      "id": "f15_c2s",
+      "bytesHex": "000000040100000000",
+      "direction": "c2s",
+      "offsetOctets": 15,
+      "seq": 3,
+      "note": "client ACK server SETTINGS"
+    },
+    {
+      "id": "f24_c2s",
+      "bytesHex": "00000c01000000000182bd8154076162632d313233",
+      "direction": "c2s",
+      "offsetOctets": 24,
+      "seq": 4,
+      "note": "HEADERS stream 1 起始：:method GET(idx2) :scheme https(idx61) :path /(idx1) + 字面 x-trace 入动态表，无 END_HEADERS"
+    },
+    {
+      "id": "f45_c2s",
+      "bytesHex": "00000100000000000101",
+      "direction": "c2s",
+      "offsetOctets": 45,
+      "seq": 5,
+      "note": "非法插入：header block 未完时的 DATA stream1"
+    },
+    {
+      "id": "f55_c2s",
+      "bytesHex": "000000000100000001",
+      "direction": "c2s",
+      "offsetOctets": 55,
+      "seq": 6,
+      "note": "DATA stream 1 空体 + END_STREAM → half-closed(local)"
+    },
+    {
+      "id": "f18_s2c",
+      "bytesHex": "00000101040000000184",
+      "direction": "s2c",
+      "offsetOctets": 18,
+      "seq": 7,
+      "note": "server HEADERS stream 1 响应（:status 200 idx4），s2c 独立动态表"
+    },
+    {
+      "id": "f28_s2c",
+      "bytesHex": "0000020001000000016f6b",
+      "direction": "s2c",
+      "offsetOctets": 28,
+      "seq": 8,
+      "note": "server DATA + END_STREAM → stream closed"
+    }
+  ]
+}

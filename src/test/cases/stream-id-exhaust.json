@@ -1,0 +1,71 @@
+{
+  "caseId": "stream-id-exhaust",
+  "title": "stream id 穷尽与保留位：HEADERS 使用 0x7fffffff 后，再来 R 位置位帧",
+  "mutates": {
+    "frameOffsetOctets": 27,
+    "direction": "c2s",
+    "replacementNote": "HEADERS stream=2147483647（31-bit 最大），随后 R 位帧"
+  },
+  "expects": [
+    {
+      "ruleId": "R-STREAM-EXHAUST",
+      "scope": "connection",
+      "note": "最大 id 的新 HEADERS 触发 ENHANCE_YOUR_CALM 连接错误"
+    }
+  ],
+  "coordinateSystem": {
+    "frameOffset": "octet per direction",
+    "streamId": "uint31",
+    "range": "half-open [start,end)"
+  },
+  "frames": [
+    {
+      "id": "f0_c2s",
+      "bytesHex": "000006040000000000000100000100",
+      "direction": "c2s",
+      "offsetOctets": 0,
+      "seq": 0,
+      "note": "client SETTINGS：提议 c2s 方向 HEADER_TABLE_SIZE=256 octets（生效点待 ACK）"
+    },
+    {
+      "id": "f0_s2c",
+      "bytesHex": "000000040000000000",
+      "direction": "s2c",
+      "offsetOctets": 0,
+      "seq": 1,
+      "note": "server SETTINGS：s2c 方向保持默认（空 SETTINGS）"
+    },
+    {
+      "id": "f9_s2c",
+      "bytesHex": "000000040100000000",
+      "direction": "s2c",
+      "offsetOctets": 9,
+      "seq": 2,
+      "note": "server ACK client SETTINGS → c2s 256 octet 上限生效"
+    },
+    {
+      "id": "f15_c2s",
+      "bytesHex": "000000040100000000",
+      "direction": "c2s",
+      "offsetOctets": 15,
+      "seq": 3,
+      "note": "client ACK server SETTINGS"
+    },
+    {
+      "id": "f24_c2s",
+      "bytesHex": "00000301047fffffff82bd81",
+      "direction": "c2s",
+      "offsetOctets": 24,
+      "seq": 4,
+      "note": "HEADERS stream 2147483647（本方向 id 穷尽）"
+    },
+    {
+      "id": "f36_c2s",
+      "bytesHex": "00000408008000000000000001",
+      "direction": "c2s",
+      "offsetOctets": 36,
+      "seq": 5,
+      "note": "随后 R 位置位的 WINDOW_UPDATE（手工构造，stream 字段=0x80000000）"
+    }
+  ]
+}
