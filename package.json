@@ -1,0 +1,20 @@
+{
+  "name": "hpack-state-mirror",
+  "private": true,
+  "version": "0.1.0",
+  "description": "HPACK 状态镜：HTTP/2 帧、动态表与流生命周期回放器",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "test": "vitest",
+    "build": "vite build",
+    "casepack:build": "node scripts/build-casepack.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "happy-dom": "^20.0.0",
+    "typescript": "^5.6.0",
+    "vite": "^8.0.0",
+    "vitest": "^5.0.1"
+  }
+}
